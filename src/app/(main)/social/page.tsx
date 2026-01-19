@@ -100,18 +100,31 @@ export default function SocialPage() {
 
       const inviteCode = generateInviteCode()
 
-      // Create the group
-      const { data: group, error: groupError } = await supabase
+      // Create the group - separate insert and select to identify which fails
+      const { error: insertError } = await supabase
         .from('groups')
         .insert({
           name: newGroupName.trim(),
           invite_code: inviteCode,
           created_by: user.id,
         })
+
+      if (insertError) {
+        console.error('Group INSERT error:', insertError)
+        throw new Error(`Insert failed: ${insertError.message}`)
+      }
+
+      // Now fetch the created group
+      const { data: group, error: selectError } = await supabase
+        .from('groups')
         .select()
+        .eq('invite_code', inviteCode)
         .single()
 
-      if (groupError) throw groupError
+      if (selectError) {
+        console.error('Group SELECT error:', selectError)
+        throw new Error(`Select failed: ${selectError.message}`)
+      }
 
       // Add creator as admin
       const { error: memberError } = await supabase

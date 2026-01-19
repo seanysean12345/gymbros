@@ -312,9 +312,10 @@ export default function LogPage() {
       })
 
       router.push(`/log/${workoutRecord.id}`)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving workout:', error)
-      alert('Failed to save workout. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+      alert(`Failed to save workout: ${errorMessage}`)
     } finally {
       setSaving(false)
     }

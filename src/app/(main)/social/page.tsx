@@ -127,8 +127,10 @@ export default function SocialPage() {
       setNewGroupName('')
       setShowCreateGroup(false)
       loadData()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create group')
+    } catch (err: unknown) {
+      console.error('Group creation error:', err)
+      const error = err as { message?: string; details?: string; hint?: string; code?: string }
+      setError(error?.message || error?.details || 'Failed to create group')
     } finally {
       setCreating(false)
     }

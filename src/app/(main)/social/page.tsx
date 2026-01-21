@@ -100,30 +100,26 @@ export default function SocialPage() {
 
       const inviteCode = generateInviteCode()
 
-      // Create the group - separate insert and select to identify which fails
-      const { error: insertError } = await supabase
+      // Create the group and return the created row
+      const { data: group, error: insertError } = await supabase
         .from('groups')
         .insert({
           name: newGroupName.trim(),
           invite_code: inviteCode,
           created_by: user.id,
         })
+        .select()
+        .single()
+
+      console.log('Insert result:', { group, insertError })
 
       if (insertError) {
         console.error('Group INSERT error:', insertError)
-        throw new Error(`Insert failed: ${insertError.message}`)
+        throw new Error(`Insert failed: ${insertError.message} (code: ${insertError.code})`)
       }
 
-      // Now fetch the created group
-      const { data: group, error: selectError } = await supabase
-        .from('groups')
-        .select()
-        .eq('invite_code', inviteCode)
-        .single()
-
-      if (selectError) {
-        console.error('Group SELECT error:', selectError)
-        throw new Error(`Select failed: ${selectError.message}`)
+      if (!group) {
+        throw new Error('Group was not created - RLS policy may be blocking the insert')
       }
 
       // Add creator as admin

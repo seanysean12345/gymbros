@@ -43,17 +43,23 @@ export function BottomNav() {
       >
         {/* Nav items container */}
         <div className="mx-auto flex max-w-lg items-center justify-around gap-1">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const isActive = pathname === item.href ||
               (item.href !== '/' && pathname.startsWith(item.href))
             const Icon = item.icon
+            const isFirst = index === 0
+            const isLast = index === navItems.length - 1
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
-                className="relative flex-1"
+                className={cn(
+                  "relative flex-1",
+                  isFirst && "ml-2",
+                  isLast && "mr-2"
+                )}
               >
                 {/* Chrome parallelogram button */}
                 <div

@@ -529,7 +529,7 @@ export default function LogPage() {
                   {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
                 </p>
                 <p className="text-gray-500 mb-4">Rest Time</p>
-                <Button variant="outline" onClick={() => setRestTimer(null)}>
+                <Button variant="secondary" onClick={() => setRestTimer(null)}>
                   Skip Rest
                 </Button>
               </CardContent>

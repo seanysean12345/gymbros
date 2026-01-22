@@ -187,7 +187,7 @@ export default async function ProfilePage() {
 
       {/* Sign Out */}
       <form action="/api/auth/signout" method="POST">
-        <Button variant="outline" className="w-full" type="submit">
+        <Button variant="secondary" className="w-full" type="submit">
           <LogOut className="h-4 w-4 mr-2" />
           Sign Out
         </Button>

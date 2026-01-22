@@ -178,7 +178,7 @@ export default async function HomePage() {
                 <span className="text-green-600 text-sm font-medium">Completed</span>
               </div>
               <Link href={`/log/${recentWorkouts[0].id}`}>
-                <Button variant="outline" size="sm" className="w-full mt-2">
+                <Button variant="secondary" size="sm" className="w-full mt-2">
                   View Details
                 </Button>
               </Link>
@@ -230,7 +230,7 @@ export default async function HomePage() {
           <div className="text-center py-4 text-gray-500">
             <p className="mb-2">No active challenges</p>
             <Link href="/social">
-              <Button variant="outline" size="sm">
+              <Button variant="secondary" size="sm">
                 Join a group to compete
               </Button>
             </Link>

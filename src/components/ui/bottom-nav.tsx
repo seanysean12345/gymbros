@@ -30,15 +30,16 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50">
       {/* Dark base bar */}
       <div
         className="relative"
         style={{
           background: 'linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 50%, #0A0A0A 100%)',
           borderTop: '1px solid #3A3A3A',
-          // Increased bottom padding for skewed button corners + iOS safe areas
-          padding: '8px 8px calc(20px + env(safe-area-inset-bottom, 0px)) 8px',
+          // No horizontal padding - buttons fill edge to edge
+          // Bottom padding for skewed corners + iOS safe area
+          padding: '8px 0 calc(16px + env(safe-area-inset-bottom, 0px)) 0',
         }}
       >
         {/* Nav items container */}

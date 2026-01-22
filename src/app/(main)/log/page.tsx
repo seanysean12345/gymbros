@@ -106,6 +106,23 @@ export default function LogPage() {
     return () => clearInterval(interval)
   }, [restTimer])
 
+  // Listen for nav reset event (when user clicks Log while already on log page)
+  useEffect(() => {
+    const handleNavReset = (e: CustomEvent) => {
+      if (e.detail?.href === '/log') {
+        // Only reset if not in active workout
+        if (!workout) {
+          setView('category')
+          setSelectedCategory(null)
+          setExercises([])
+        }
+      }
+    }
+
+    window.addEventListener('nav-reset', handleNavReset as EventListener)
+    return () => window.removeEventListener('nav-reset', handleNavReset as EventListener)
+  }, [workout])
+
   // Fetch exercises when category is selected
   useEffect(() => {
     if (!selectedCategory) return

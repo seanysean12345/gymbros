@@ -37,29 +37,23 @@ export function BottomNav() {
         style={{
           background: 'linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 50%, #0A0A0A 100%)',
           borderTop: '1px solid #3A3A3A',
-          // Extra horizontal padding for skewed buttons + iOS safe areas
-          padding: '8px calc(24px + env(safe-area-inset-right, 0px)) 12px calc(24px + env(safe-area-inset-left, 0px))',
+          // Increased bottom padding for skewed button corners + iOS safe areas
+          padding: '8px 8px calc(20px + env(safe-area-inset-bottom, 0px)) 8px',
         }}
       >
         {/* Nav items container */}
         <div className="mx-auto flex max-w-lg items-center justify-around gap-1">
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href ||
               (item.href !== '/' && pathname.startsWith(item.href))
             const Icon = item.icon
-            const isFirst = index === 0
-            const isLast = index === navItems.length - 1
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
-                className={cn(
-                  "relative flex-1",
-                  isFirst && "ml-4",
-                  isLast && "mr-4"
-                )}
+                className="relative flex-1"
               >
                 {/* Chrome parallelogram button */}
                 <div

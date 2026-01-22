@@ -3,57 +3,210 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 250, 250, 250;
-  --background-end-rgb: 255, 255, 255;
+  --raw-red: #CC0000;
+  --raw-red-dark: #990000;
+  --raw-red-glow: #FF0000;
+  --chrome-light: #E8E8E8;
+  --chrome-mid: #C0C0C0;
+  --chrome-dark: #A0A0A0;
+  --chrome-shadow: #707070;
+  --arena-black: #0A0A0A;
+  --foreground-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 10, 10, 10;
-    --background-end-rgb: 10, 10, 10;
-  }
-}
-
+/* Force dark mode for WWE aesthetic */
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: var(--arena-black);
   min-height: 100vh;
 }
 
-/* Custom scrollbar for webkit browsers */
+/* MS Gothic - the actual MGS / Japanese game font */
+* {
+  font-family: 'MS Gothic', 'MS PGothic', 'Hiragino Kaku Gothic Pro', 'Meiryo', 'Yu Gothic', 'Courier New', monospace !important;
+}
+
+body {
+  font-weight: normal;
+  letter-spacing: 0.03em;
+}
+
+/* Override any system font variables */
+:root {
+  --font-inter: 'MS Gothic', monospace;
+  --font-sans: 'MS Gothic', monospace;
+}
+
+/* WWE 2000s typography - chunky, aggressive, italic - ONLY for main headers */
+h1, h2, h3 {
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif !important;
+  font-weight: normal !important;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+/* WWE font for nav labels and buttons */
+.font-wwe {
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif !important;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Chrome brushed metal - HORIZONTAL brush strokes like real metal */
+.brushed-chrome {
+  background:
+    /* Horizontal brush lines */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      rgba(255,255,255,0.1) 1px,
+      transparent 2px,
+      transparent 4px
+    ),
+    /* Base chrome gradient */
+    linear-gradient(
+      180deg,
+      #E0E0E0 0%,
+      #F5F5F5 15%,
+      #C8C8C8 30%,
+      #D8D8D8 50%,
+      #B0B0B0 70%,
+      #C0C0C0 85%,
+      #A0A0A0 100%
+    );
+}
+
+/* Chrome plate with bevel - the classic SmackDown vs Raw button look */
+.chrome-plate {
+  background: linear-gradient(
+    180deg,
+    #D0D0D0 0%,
+    #E8E8E8 10%,
+    #C0C0C0 25%,
+    #D0D0D0 50%,
+    #A8A8A8 75%,
+    #B8B8B8 90%,
+    #909090 100%
+  );
+  border: 2px solid;
+  border-color: #F0F0F0 #606060 #505050 #E0E0E0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 4px 8px rgba(0,0,0,0.5);
+}
+
+/* Horizontal brushed texture overlay */
+.brushed-horizontal {
+  position: relative;
+}
+
+.brushed-horizontal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 1px,
+    rgba(255,255,255,0.15) 1px,
+    rgba(255,255,255,0.15) 2px,
+    transparent 2px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+
+/* Red active state glow */
+.glow-red {
+  box-shadow:
+    0 0 10px rgba(255, 0, 0, 0.7),
+    0 0 20px rgba(204, 0, 0, 0.5),
+    0 0 30px rgba(204, 0, 0, 0.3);
+}
+
+/* Red gradient for active buttons */
+.chrome-red {
+  background: linear-gradient(
+    180deg,
+    #FF2020 0%,
+    #DD0000 20%,
+    #CC0000 50%,
+    #AA0000 80%,
+    #880000 100%
+  );
+  border-color: #FF4040 #660000 #550000 #EE0000;
+}
+
+/* Arena spotlight background */
+.arena-bg {
+  background:
+    radial-gradient(ellipse 100% 80% at 50% -20%, rgba(255, 0, 0, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 40%),
+    linear-gradient(180deg, #0A0A0A 0%, #0F0F0F 100%);
+}
+
+/* Skewed parallelogram - the signature WWE shape */
+.skew-container {
+  transform: skewX(-8deg);
+}
+
+.skew-container > * {
+  transform: skewX(8deg);
+}
+
+/* Chrome text effect */
+.text-chrome {
+  background: linear-gradient(
+    180deg,
+    #FFFFFF 0%,
+    #E0E0E0 25%,
+    #A0A0A0 50%,
+    #C0C0C0 75%,
+    #808080 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(2px 2px 0 #000);
+}
+
+/* Red accent bar - for headers */
+.wwe-accent {
+  position: relative;
+}
+
+.wwe-accent::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--raw-red) 0%, var(--raw-red-dark) 100%);
+  transform: skewX(-12deg);
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #1A1A1A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: linear-gradient(180deg, #C0C0C0 0%, #808080 100%);
+  border: 1px solid #606060;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    background: #475569;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-  }
+  background: linear-gradient(180deg, #D0D0D0 0%, #909090 100%);
 }
 
 /* PWA safe areas */
@@ -64,4 +217,16 @@ body {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+}
+
+/* Rivet/bolt for corners */
+.rivet {
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle at 35% 35%, #E0E0E0 0%, #A0A0A0 40%, #606060 100%);
+  border-radius: 50%;
+  box-shadow:
+    inset 1px 1px 2px rgba(255,255,255,0.8),
+    inset -1px -1px 2px rgba(0,0,0,0.4),
+    0 1px 2px rgba(0,0,0,0.5);
 }

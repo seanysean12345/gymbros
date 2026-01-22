@@ -18,30 +18,56 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="block text-sm uppercase tracking-wider mb-2 text-gray-400"
+            style={{
+              fontFamily: 'Impact, Haettenschweiler, Arial Narrow Bold, sans-serif',
+              fontStyle: 'italic',
+            }}
           >
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={cn(
-            'block w-full rounded-lg border px-3 py-2 text-gray-900 placeholder-gray-400',
-            'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent',
-            'dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500',
-            error
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-300 dark:border-gray-600',
-            className
-          )}
-          {...props}
-        />
+        <div className="relative">
+          <input
+            ref={ref}
+            id={inputId}
+            className={cn(
+              // Sharp corners
+              'block w-full rounded-none px-4 py-3',
+              'text-white placeholder-gray-600',
+              // Transitions
+              'transition-all duration-150',
+              className
+            )}
+            style={{
+              // Recessed metal appearance
+              background: 'linear-gradient(180deg, #0A0A0A 0%, #151515 100%)',
+              // Inset beveled border
+              border: '2px solid',
+              borderColor: error
+                ? '#CC0000 #FF3030 #FF3030 #CC0000'
+                : '#1A1A1A #3A3A3A #3A3A3A #1A1A1A',
+              boxShadow: error
+                ? 'inset 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(204, 0, 0, 0.3)'
+                : 'inset 0 2px 4px rgba(0,0,0,0.5)',
+            }}
+            {...props}
+          />
+        </div>
         {error && (
-          <p className="mt-1 text-sm text-red-500">{error}</p>
+          <p
+            className="mt-2 text-sm uppercase tracking-wide"
+            style={{
+              color: '#FF3030',
+              fontFamily: 'Impact, Haettenschweiler, Arial Narrow Bold, sans-serif',
+              fontStyle: 'italic',
+            }}
+          >
+            {error}
+          </p>
         )}
         {hint && !error && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+          <p className="mt-2 text-sm text-gray-500">{hint}</p>
         )}
       </div>
     )

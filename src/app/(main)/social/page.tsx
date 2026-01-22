@@ -6,12 +6,24 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Users, Plus, Trophy, Copy, Check, UserPlus } from 'lucide-react'
+import { Users, Plus, Trophy, Copy, Check, UserPlus, Settings, Camera, ChevronDown, ChevronUp } from 'lucide-react'
 import { formatRelativeTime, generateInviteCode } from '@/lib/utils'
-import type { Group, ActivityFeedItem, Challenge } from '@/types'
+import { hasUploadedInPeriod, getStartOfPeriod } from '@/lib/supabase/storage'
+import type { Group, ActivityFeedItem, Challenge, ProgressPhoto } from '@/types'
 
 interface GroupWithMembers extends Group {
   member_count?: number
+  userRole?: 'admin' | 'member'
+}
+
+interface MemberWithUploadStatus {
+  user_id: string
+  profile: {
+    id: string
+    username: string
+    display_name: string | null
+  }
+  hasUploaded: boolean
 }
 
 export default function SocialPage() {
@@ -30,6 +42,11 @@ export default function SocialPage() {
   const [creating, setCreating] = useState(false)
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const [groupMembers, setGroupMembers] = useState<Record<string, MemberWithUploadStatus[]>>({})
+  const [userPhotos, setUserPhotos] = useState<ProgressPhoto[]>([])
+  const [updatingSettings, setUpdatingSettings] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -44,6 +61,8 @@ export default function SocialPage() {
       return
     }
 
+    setCurrentUserId(user.id)
+
     // Fetch user's groups - using two separate queries to avoid RLS join issues
     const { data: memberships } = await supabase
       .from('group_members')
@@ -52,14 +71,29 @@ export default function SocialPage() {
 
     if (memberships && memberships.length > 0) {
       const groupIds = memberships.map(m => m.group_id)
+      const membershipMap = Object.fromEntries(memberships.map(m => [m.group_id, m.role]))
+
       const { data: groupsData } = await supabase
         .from('groups')
         .select('*')
         .in('id', groupIds)
 
       if (groupsData) {
-        setGroups(groupsData)
+        setGroups(groupsData.map(g => ({
+          ...g,
+          userRole: membershipMap[g.id] as 'admin' | 'member',
+        })))
       }
+    }
+
+    // Fetch user's progress photos
+    const { data: photos } = await supabase
+      .from('progress_photos')
+      .select('*')
+      .eq('user_id', user.id)
+
+    if (photos) {
+      setUserPhotos(photos as ProgressPhoto[])
     }
 
     // Fetch activity feed from group members
@@ -208,6 +242,79 @@ export default function SocialPage() {
     setTimeout(() => setCopiedCode(null), 2000)
   }
 
+  async function loadGroupMembers(groupId: string, group: GroupWithMembers) {
+    // Fetch all members of this group
+    const { data: members } = await supabase
+      .from('group_members')
+      .select('user_id')
+      .eq('group_id', groupId)
+
+    if (!members || members.length === 0) return
+
+    const memberIds = members.map(m => m.user_id)
+
+    // Fetch profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name')
+      .in('id', memberIds)
+
+    // Fetch progress photos for these members
+    const { data: photos } = await supabase
+      .from('progress_photos')
+      .select('user_id, week_of')
+      .in('user_id', memberIds)
+
+    const frequency = (group.photo_upload_frequency || 'weekly') as 'daily' | 'weekly' | 'monthly'
+
+    const membersWithStatus: MemberWithUploadStatus[] = (profiles || []).map(profile => ({
+      user_id: profile.id,
+      profile,
+      hasUploaded: hasUploadedInPeriod(profile.id, photos || [], frequency),
+    }))
+
+    setGroupMembers(prev => ({ ...prev, [groupId]: membersWithStatus }))
+  }
+
+  async function toggleGroupExpand(groupId: string, group: GroupWithMembers) {
+    if (expandedGroup === groupId) {
+      setExpandedGroup(null)
+    } else {
+      setExpandedGroup(groupId)
+      if (!groupMembers[groupId]) {
+        await loadGroupMembers(groupId, group)
+      }
+    }
+  }
+
+  async function updateGroupSettings(groupId: string, photoRequired: boolean, frequency: string) {
+    setUpdatingSettings(true)
+    setError(null)
+
+    try {
+      const { error: updateError } = await supabase
+        .from('groups')
+        .update({
+          photo_upload_required: photoRequired,
+          photo_upload_frequency: frequency,
+        })
+        .eq('id', groupId)
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setGroups(prev => prev.map(g =>
+        g.id === groupId
+          ? { ...g, photo_upload_required: photoRequired, photo_upload_frequency: frequency as 'daily' | 'weekly' | 'monthly' }
+          : g
+      ))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update settings')
+    } finally {
+      setUpdatingSettings(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="px-4 py-6">
@@ -291,33 +398,172 @@ export default function SocialPage() {
           {/* Groups List */}
           {groups.length > 0 ? (
             <div className="space-y-2">
-              {groups.map((group) => (
-                <div
-                  key={group.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {group.name}
-                    </p>
+              {groups.map((group) => {
+                const isExpanded = expandedGroup === group.id
+                const members = groupMembers[group.id] || []
+                const frequency = (group.photo_upload_frequency || 'weekly') as 'daily' | 'weekly' | 'monthly'
+                const userHasUploaded = hasUploadedInPeriod(currentUserId || '', userPhotos, frequency)
+                const needsUpload = group.photo_upload_required && !userHasUploaded
+
+                return (
+                  <div
+                    key={group.id}
+                    className="rounded-lg bg-gray-50 dark:bg-gray-800 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {group.name}
+                        </p>
+                        {group.photo_upload_required && (
+                          <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+                            <Camera className="h-3 w-3" />
+                            {group.photo_upload_frequency}
+                          </span>
+                        )}
+                        {needsUpload && (
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 font-mono">
+                          {group.invite_code}
+                        </span>
+                        <button
+                          onClick={() => copyInviteCode(group.invite_code)}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        >
+                          {copiedCode === group.invite_code ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-gray-400" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => toggleGroupExpand(group.id, group)}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Settings */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-4">
+                        {/* Admin Settings */}
+                        {group.userRole === 'admin' && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Group Settings
+                            </h4>
+
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-gray-900 dark:text-white">
+                                  Require Photo Uploads
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Members must upload progress photos
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => updateGroupSettings(
+                                  group.id,
+                                  !group.photo_upload_required,
+                                  group.photo_upload_frequency || 'weekly'
+                                )}
+                                disabled={updatingSettings}
+                                className={`w-12 h-6 rounded-full transition-colors ${
+                                  group.photo_upload_required
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300 dark:bg-gray-600'
+                                }`}
+                              >
+                                <div
+                                  className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                                    group.photo_upload_required ? 'translate-x-6' : 'translate-x-0.5'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            {group.photo_upload_required && (
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm text-gray-900 dark:text-white">
+                                  Upload Frequency
+                                </p>
+                                <select
+                                  value={group.photo_upload_frequency || 'weekly'}
+                                  onChange={(e) => updateGroupSettings(
+                                    group.id,
+                                    group.photo_upload_required,
+                                    e.target.value
+                                  )}
+                                  disabled={updatingSettings}
+                                  className="text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                                >
+                                  <option value="daily">Daily</option>
+                                  <option value="weekly">Weekly</option>
+                                  <option value="monthly">Monthly</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Members List with Upload Status */}
+                        {group.photo_upload_required && members.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Members
+                            </h4>
+                            <div className="space-y-2">
+                              {members.map((member) => (
+                                <div
+                                  key={member.user_id}
+                                  className="flex items-center justify-between p-2 rounded bg-gray-100 dark:bg-gray-700/50"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                                        member.hasUploaded
+                                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600'
+                                          : 'bg-red-100 dark:bg-red-900/30 text-red-600'
+                                      }`}
+                                    >
+                                      {(member.profile.display_name || member.profile.username)?.[0]?.toUpperCase() || '?'}
+                                    </div>
+                                    <span
+                                      className={`text-sm ${
+                                        member.hasUploaded
+                                          ? 'text-gray-900 dark:text-white'
+                                          : 'text-red-600 dark:text-red-400 font-medium'
+                                      }`}
+                                    >
+                                      {member.profile.display_name || member.profile.username}
+                                    </span>
+                                  </div>
+                                  {member.hasUploaded ? (
+                                    <Check className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <span className="text-xs text-red-500">Missing photo</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 font-mono">
-                      {group.invite_code}
-                    </span>
-                    <button
-                      onClick={() => copyInviteCode(group.invite_code)}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                    >
-                      {copiedCode === group.invite_code ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Copy className="h-4 w-4 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="text-center py-4">

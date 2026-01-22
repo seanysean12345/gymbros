@@ -116,55 +116,64 @@ export default async function ProgressPage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+      <h1 className="text-3xl text-white mb-6">
         Progress
       </h1>
 
       {/* Weekly Stats */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="text-center py-4">
-          <div className="text-2xl font-bold text-brand-600">
+        <Card className="text-center py-5">
+          <div
+            className="text-3xl font-wwe"
+            style={{ color: '#CC0000', textShadow: '0 0 10px rgba(204,0,0,0.5)' }}
+          >
             {weekWorkouts?.length || 0}
           </div>
-          <div className="text-xs text-gray-500">Workouts This Week</div>
+          <div className="text-base text-gray-400 mt-1">Workouts This Week</div>
         </Card>
-        <Card className="text-center py-4">
-          <div className="text-2xl font-bold text-brand-600">
+        <Card className="text-center py-5">
+          <div
+            className="text-3xl font-wwe"
+            style={{ color: '#CC0000', textShadow: '0 0 10px rgba(204,0,0,0.5)' }}
+          >
             {weeklyVolume > 1000 ? `${(weeklyVolume / 1000).toFixed(1)}k` : weeklyVolume}
           </div>
-          <div className="text-xs text-gray-500">{unit} This Week</div>
+          <div className="text-base text-gray-400 mt-1">{unit} This Week</div>
         </Card>
       </div>
 
       {/* Personal Records */}
       <Card className="mb-6">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Award className="h-4 w-4 text-yellow-500" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Award className="h-5 w-5 text-yellow-500" />
             Recent PRs
           </CardTitle>
         </CardHeader>
         <CardContent>
           {personalRecords && personalRecords.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {personalRecords.map((pr) => (
-                <div key={pr.id} className="flex items-center justify-between">
+                <div key={pr.id} className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <p className="text-lg text-white">
                       {pr.exercise?.name}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-base text-gray-500">
                       {formatDate(pr.achieved_at)}
                     </p>
                   </div>
-                  <div className="text-lg font-bold text-brand-600">
+                  <div
+                    className="text-2xl font-wwe"
+                    style={{ color: '#CC0000' }}
+                  >
                     {formatWeight(pr.value, unit)}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">
+            <p className="text-gray-400 text-center py-6 text-lg">
               No PRs recorded yet. Start lifting to set some records!
             </p>
           )}
@@ -174,29 +183,38 @@ export default async function ProgressPage() {
       {/* Exercise Progress */}
       <Card className="mb-6">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-blue-500" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-blue-500" />
             Track Exercise Progress
           </CardTitle>
         </CardHeader>
         <CardContent>
           {frequentExercises.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {frequentExercises.map((exercise) => (
                 <Link
                   key={exercise.id}
                   href={`/progress/exercise/${exercise.id}`}
-                  className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+                  className="relative transform -skew-x-3 transition-all hover:scale-[1.02] active:scale-95 min-h-[60px]"
+                  style={{
+                    background: 'linear-gradient(180deg, #D0D0D0 0%, #E0E0E0 20%, #C0C0C0 50%, #B0B0B0 80%, #909090 100%)',
+                    border: '2px solid',
+                    borderColor: '#F0F0F0 #606060 #505050 #E0E0E0',
+                    padding: '14px 12px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
+                  }}
                 >
-                  <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                    {exercise.name}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">{exercise.category}</p>
+                  <div className="transform skew-x-3">
+                    <p className="text-gray-900 font-wwe text-base truncate">
+                      {exercise.name}
+                    </p>
+                    <p className="text-sm text-gray-600 capitalize">{exercise.category}</p>
+                  </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">
+            <p className="text-gray-400 text-center py-6 text-lg">
               Log workouts to track exercise progress
             </p>
           )}
@@ -206,8 +224,8 @@ export default async function ProgressPage() {
       {/* Workout History */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-purple-500" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-purple-500" />
             Workout History
           </CardTitle>
         </CardHeader>
@@ -229,28 +247,31 @@ export default async function ProgressPage() {
                   <Link
                     key={workout.id}
                     href={`/log/${workout.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-between p-4 transition-all hover:bg-white/5 active:bg-white/10 min-h-[64px]"
+                    style={{
+                      borderBottom: '1px solid #2A2A2A',
+                    }}
                   >
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
+                      <p className="text-lg text-white">
                         {workout.name || 'Workout'}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-base text-gray-500">
                         {formatDate(workout.started_at)} • {workout.workout_exercises?.length || 0} exercises
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base text-gray-400">
                         {volume > 1000 ? `${(volume / 1000).toFixed(1)}k` : volume} {unit}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <ChevronRight className="h-5 w-5 text-gray-500" />
                     </div>
                   </Link>
                 )
               })}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">
+            <p className="text-gray-400 text-center py-6 text-lg">
               No workouts yet. Start your fitness journey!
             </p>
           )}

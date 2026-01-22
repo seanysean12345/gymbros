@@ -18,6 +18,8 @@ export interface Group {
   invite_code: string
   created_by: string
   created_at: string
+  photo_upload_required: boolean
+  photo_upload_frequency: 'daily' | 'weekly' | 'monthly'
 }
 
 export interface GroupMember {
@@ -157,6 +159,17 @@ export interface ActivityFeedItem {
   activity_type: 'workout_completed' | 'pr_achieved' | 'trophy_earned' | 'challenge_won' | 'streak_milestone'
   reference_id: string | null
   metadata: Record<string, unknown>
+  created_at: string
+  // Joined data
+  profile?: Profile
+}
+
+export interface ProgressPhoto {
+  id: string
+  user_id: string
+  photo_url: string
+  caption: string | null
+  week_of: string
   created_at: string
   // Joined data
   profile?: Profile

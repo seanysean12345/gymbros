@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Settings, Trophy, LogOut, ChevronRight, Flame } from 'lucide-react'
+import { Settings, Trophy, LogOut, ChevronRight, Flame, Camera, Image } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ProfilePhotoSection } from '@/components/profile/photo-section'
+import { hasUploadedInPeriod } from '@/lib/supabase/storage'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -46,20 +48,37 @@ export default async function ProfilePage() {
     .select('group_id')
     .eq('user_id', user.id)
 
-  type GroupData = { id: string; name: string; invite_code: string }
+  type GroupData = { id: string; name: string; invite_code: string; photo_upload_required: boolean; photo_upload_frequency: string }
   let groups: GroupData[] = []
 
   if (groupMemberships && groupMemberships.length > 0) {
     const groupIds = groupMemberships.map(m => m.group_id)
     const { data: groupsData } = await supabase
       .from('groups')
-      .select('id, name, invite_code')
+      .select('id, name, invite_code, photo_upload_required, photo_upload_frequency')
       .in('id', groupIds)
 
     if (groupsData) {
-      groups = groupsData
+      groups = groupsData as GroupData[]
     }
   }
+
+  // Fetch user's progress photos
+  const { data: progressPhotos } = await supabase
+    .from('progress_photos')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // Check if user has uploaded this week for groups that require it
+  const groupsRequiringUpload = groups
+    .filter(g => g.photo_upload_required)
+
+  const hasUploadedThisPeriod = groupsRequiringUpload.length === 0 ||
+    groupsRequiringUpload.every(g =>
+      hasUploadedInPeriod(user.id, progressPhotos || [], (g.photo_upload_frequency || 'weekly') as 'daily' | 'weekly' | 'monthly')
+    )
 
   const displayName = profile?.display_name || profile?.username || 'Athlete'
   const username = profile?.username || 'user'
@@ -97,6 +116,14 @@ export default async function ProfilePage() {
           <div className="text-xs text-gray-500">Trophies</div>
         </Card>
       </div>
+
+      {/* Progress Photos Section */}
+      <ProfilePhotoSection
+        userId={user.id}
+        photos={progressPhotos || []}
+        hasUploadedThisPeriod={hasUploadedThisPeriod}
+        requiresUpload={groupsRequiringUpload.length > 0}
+      />
 
       {/* Trophies Section */}
       <Link href="/profile/trophies">

@@ -22,6 +22,19 @@ import {
 } from 'lucide-react'
 import type { Exercise, ExerciseCategory, WorkoutInProgress, ExerciseSetInProgress } from '@/types'
 
+// Fallback for crypto.randomUUID (not available over HTTP on mobile)
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback UUID generator
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 const categoryIcons: Record<ExerciseCategory, React.ElementType> = {
   chest: Dumbbell,
   back: Activity,
@@ -115,7 +128,7 @@ export default function LogPage() {
 
   const startWorkout = () => {
     setWorkout({
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: workoutName || 'Workout',
       started_at: new Date(),
       exercises: [],
@@ -127,11 +140,11 @@ export default function LogPage() {
     if (!workout) return
 
     const newExercise = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       exercise,
       sets: [
         {
-          id: crypto.randomUUID(),
+          id: generateId(),
           set_number: 1,
           weight: undefined,
           reps: undefined,
@@ -156,7 +169,7 @@ export default function LogPage() {
     const lastSet = exercise.sets[exercise.sets.length - 1]
 
     const newSet: ExerciseSetInProgress = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       set_number: exercise.sets.length + 1,
       weight: lastSet?.weight,
       reps: lastSet?.reps,
@@ -325,10 +338,10 @@ export default function LogPage() {
   if (view === 'category' && !workout) {
     return (
       <div className="px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl text-white mb-2">
           Start Workout
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
+        <p className="text-lg text-gray-400 mb-6">
           What are you training today?
         </p>
 
@@ -352,18 +365,47 @@ export default function LogPage() {
                   startWorkout()
                   setView('exercises')
                 }}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all',
-                  'border-gray-200 bg-white hover:border-brand-500 hover:bg-brand-50',
-                  'dark:border-gray-700 dark:bg-gray-800 dark:hover:border-brand-500 dark:hover:bg-brand-900/20'
-                )}
+                className="relative transform -skew-x-6 transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: 'linear-gradient(180deg, #D8D8D8 0%, #F0F0F0 15%, #C8C8C8 35%, #D0D0D0 50%, #B0B0B0 70%, #C0C0C0 85%, #989898 100%)',
+                  border: '2px solid',
+                  borderColor: '#FFFFFF #707070 #606060 #E8E8E8',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5)',
+                  padding: '24px 16px',
+                }}
               >
-                <div className={cn('p-3 rounded-full', getCategoryColor(category.id))}>
-                  <Icon className="h-6 w-6 text-white" />
+                {/* Brushed metal texture */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(255,255,255,0.08) 1px, rgba(255,255,255,0.08) 2px)',
+                  }}
+                />
+                {/* Content - counter skew */}
+                <div className="transform skew-x-6 flex flex-col items-center gap-3 relative z-10">
+                  <Icon className="h-10 w-10 text-gray-700" />
+                  <span
+                    className="text-gray-800 font-wwe text-xl"
+                    style={{ textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}
+                  >
+                    {category.label}
+                  </span>
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {category.label}
-                </span>
+                {/* Corner rivets */}
+                <div
+                  className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full skew-x-6"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 30%, #F0F0F0 0%, #A0A0A0 50%, #606060 100%)',
+                    boxShadow: 'inset 0.5px 0.5px 1px rgba(255,255,255,0.8)',
+                  }}
+                />
+                <div
+                  className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full skew-x-6"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 30%, #F0F0F0 0%, #A0A0A0 50%, #606060 100%)',
+                    boxShadow: 'inset 0.5px 0.5px 1px rgba(255,255,255,0.8)',
+                  }}
+                />
               </button>
             )
           })}
@@ -379,55 +421,92 @@ export default function LogPage() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setView(workout ? 'workout' : 'category')}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="transform -skew-x-6 p-2 transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(180deg, #D0D0D0 0%, #A0A0A0 100%)',
+              border: '2px solid',
+              borderColor: '#E0E0E0 #606060 #505050 #D0D0D0',
+            }}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5 text-gray-800 skew-x-6" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white capitalize">
+            <h1 className="text-xl text-white capitalize">
               {selectedCategory?.replace('_', ' ')} Exercises
             </h1>
-            <p className="text-sm text-gray-500">Select an exercise to add</p>
+            <p className="text-sm text-gray-400">Select an exercise to add</p>
           </div>
         </div>
 
-        {/* Category tabs */}
+        {/* Category tabs - chrome parallelogram style */}
         <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-4 px-4">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-                selectedCategory === category.id
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-              )}
+              className="relative transform -skew-x-6 whitespace-nowrap transition-all"
+              style={{
+                background: selectedCategory === category.id
+                  ? 'linear-gradient(180deg, #FF3030 0%, #CC0000 50%, #880000 100%)'
+                  : 'linear-gradient(180deg, #D8D8D8 0%, #E8E8E8 30%, #C0C0C0 70%, #A0A0A0 100%)',
+                border: '2px solid',
+                borderColor: selectedCategory === category.id
+                  ? '#FF5050 #660000 #550000 #FF2020'
+                  : '#FFFFFF #707070 #606060 #E8E8E8',
+                padding: '10px 20px',
+                boxShadow: selectedCategory === category.id
+                  ? '0 0 10px rgba(255,0,0,0.4)'
+                  : '0 2px 4px rgba(0,0,0,0.3)',
+              }}
             >
-              {category.label}
+              <span
+                className={cn(
+                  'transform skew-x-6 block font-wwe text-lg',
+                  selectedCategory === category.id ? 'text-white' : 'text-gray-800'
+                )}
+              >
+                {category.label}
+              </span>
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading exercises...</div>
+          <div className="text-center py-8 text-gray-400">Loading exercises...</div>
         ) : (
           <div className="space-y-2">
             {exercises.map((exercise) => (
               <button
                 key={exercise.id}
                 onClick={() => addExerciseToWorkout(exercise)}
-                className="w-full flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white hover:border-brand-500 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-brand-500 transition-colors text-left"
+                className="w-full relative transform -skew-x-3 transition-all hover:scale-[1.02] active:scale-[0.98] text-left"
+                style={{
+                  background: 'linear-gradient(180deg, #D0D0D0 0%, #E0E0E0 20%, #C0C0C0 50%, #B0B0B0 80%, #909090 100%)',
+                  border: '2px solid',
+                  borderColor: '#F0F0F0 #606060 #505050 #E0E0E0',
+                  padding: '16px 20px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
+                }}
               >
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {exercise.name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {exercise.equipment || 'Bodyweight'} • {exercise.muscle_groups?.join(', ')}
-                  </p>
+                <div className="transform skew-x-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-900 font-wwe text-xl">
+                      {exercise.name}
+                    </p>
+                    <p className="text-base text-gray-600">
+                      {exercise.equipment || 'Bodyweight'} • {exercise.muscle_groups?.join(', ')}
+                    </p>
+                  </div>
+                  <div
+                    className="p-2"
+                    style={{
+                      background: 'linear-gradient(180deg, #FF3030 0%, #CC0000 50%, #880000 100%)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)',
+                    }}
+                  >
+                    <Plus className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <Plus className="h-5 w-5 text-brand-600" />
               </button>
             ))}
           </div>
@@ -503,12 +582,13 @@ export default function LogPage() {
                   {exercise.sets.map((set, setIndex) => (
                     <div
                       key={set.id}
-                      className={cn(
-                        'grid grid-cols-12 gap-2 items-center p-2 rounded-lg',
-                        set.completed
-                          ? 'bg-green-50 dark:bg-green-900/20'
-                          : 'bg-gray-50 dark:bg-gray-800'
-                      )}
+                      className="grid grid-cols-12 gap-2 items-center p-3"
+                      style={{
+                        background: set.completed
+                          ? 'linear-gradient(180deg, rgba(204,0,0,0.2) 0%, rgba(136,0,0,0.2) 100%)'
+                          : 'linear-gradient(180deg, #1A1A1A 0%, #0F0F0F 100%)',
+                        borderBottom: '1px solid #2A2A2A',
+                      }}
                     >
                       <div className="col-span-2 text-center font-medium">
                         {set.set_number}
@@ -527,7 +607,12 @@ export default function LogPage() {
                             )
                           }
                           disabled={set.completed}
-                          className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 dark:border-gray-600"
+                          className="w-full px-2 py-2 text-base text-white placeholder-gray-500 disabled:opacity-60"
+                          style={{
+                            background: '#0A0A0A',
+                            border: '2px solid #2A2A2A',
+                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                          }}
                         />
                       </div>
                       <div className="col-span-4">
@@ -544,19 +629,37 @@ export default function LogPage() {
                             )
                           }
                           disabled={set.completed}
-                          className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 dark:border-gray-600"
+                          className="w-full px-2 py-2 text-base text-white placeholder-gray-500 disabled:opacity-60"
+                          style={{
+                            background: '#0A0A0A',
+                            border: '2px solid #2A2A2A',
+                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                          }}
                         />
                       </div>
                       <div className="col-span-2 flex justify-center">
                         {set.completed ? (
-                          <Check className="h-5 w-5 text-green-600" />
+                          <div
+                            className="p-1.5"
+                            style={{
+                              background: 'linear-gradient(180deg, #FF3030 0%, #CC0000 50%, #880000 100%)',
+                              boxShadow: '0 0 8px rgba(255,0,0,0.5)',
+                            }}
+                          >
+                            <Check className="h-5 w-5 text-white" />
+                          </div>
                         ) : (
                           <button
                             onClick={() => completeSet(exerciseIndex, setIndex)}
                             disabled={!set.weight || !set.reps}
-                            className="p-1 rounded-full bg-brand-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-1.5 transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            style={{
+                              background: 'linear-gradient(180deg, #D0D0D0 0%, #B0B0B0 50%, #909090 100%)',
+                              border: '2px solid',
+                              borderColor: '#E0E0E0 #606060 #505050 #D0D0D0',
+                            }}
                           >
-                            <Check className="h-4 w-4" />
+                            <Check className="h-5 w-5 text-gray-700" />
                           </button>
                         )}
                       </div>
@@ -564,29 +667,42 @@ export default function LogPage() {
                   ))}
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full mt-2"
+                <button
                   onClick={() => addSet(exerciseIndex)}
+                  className="w-full mt-3 py-3 transform -skew-x-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: 'linear-gradient(180deg, #D0D0D0 0%, #E0E0E0 20%, #C0C0C0 50%, #B0B0B0 80%, #909090 100%)',
+                    border: '2px solid',
+                    borderColor: '#F0F0F0 #606060 #505050 #E0E0E0',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
+                  }}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Set
-                </Button>
+                  <span className="skew-x-3 flex items-center justify-center gap-2 text-gray-800 font-wwe text-base">
+                    <Plus className="h-5 w-5" />
+                    Add Set
+                  </span>
+                </button>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Add Exercise Button */}
-        <Button
-          variant="outline"
-          className="w-full"
+        <button
           onClick={() => setView('exercises')}
+          className="w-full py-4 transform -skew-x-6 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            background: 'linear-gradient(180deg, #D8D8D8 0%, #F0F0F0 15%, #C8C8C8 35%, #D0D0D0 50%, #B0B0B0 70%, #C0C0C0 85%, #989898 100%)',
+            border: '2px solid',
+            borderColor: '#FFFFFF #707070 #606060 #E8E8E8',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5)',
+          }}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Exercise
-        </Button>
+          <span className="skew-x-6 flex items-center justify-center gap-2 text-gray-800 font-wwe text-lg">
+            <Plus className="h-6 w-6" />
+            Add Exercise
+          </span>
+        </button>
       </div>
     )
   }

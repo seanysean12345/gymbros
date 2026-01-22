@@ -4,7 +4,10 @@ import Link from 'next/link'
 import { Flame, Trophy, TrendingUp, Plus, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PhotoCarouselWrapper } from '@/components/ui/photo-carousel-wrapper'
+import { UploadRequiredBanner } from '@/components/ui/upload-required-banner'
 import { formatRelativeTime, getStreakStatus } from '@/lib/utils'
+import { getStartOfPeriod, hasUploadedInPeriod } from '@/lib/supabase/storage'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -54,6 +57,60 @@ export default async function HomePage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  // Fetch user's groups (two-step query for RLS)
+  const { data: memberships } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', user.id)
+
+  const groupIds = memberships?.map((m) => m.group_id) || []
+
+  // Fetch groups with photo requirements
+  const { data: groups } = groupIds.length > 0
+    ? await supabase
+        .from('groups')
+        .select('id, name, photo_upload_required, photo_upload_frequency')
+        .in('id', groupIds)
+    : { data: [] }
+
+  // Fetch all group member IDs for photo fetching
+  const { data: allGroupMembers } = groupIds.length > 0
+    ? await supabase
+        .from('group_members')
+        .select('user_id')
+        .in('group_id', groupIds)
+    : { data: [] }
+
+  const allMemberIds = Array.from(new Set(allGroupMembers?.map((m) => m.user_id) || []))
+
+  // Fetch progress photos from all group members
+  const { data: progressPhotos } = allMemberIds.length > 0
+    ? await supabase
+        .from('progress_photos')
+        .select(`
+          *,
+          profile:profiles (id, username, display_name, avatar_url)
+        `)
+        .in('user_id', allMemberIds)
+        .order('created_at', { ascending: false })
+        .limit(20)
+    : { data: [] }
+
+  // Fetch user's own photos for upload check
+  const { data: userPhotos } = await supabase
+    .from('progress_photos')
+    .select('id, user_id, week_of')
+    .eq('user_id', user.id)
+
+  // Determine which groups require uploads that the user hasn't fulfilled
+  const groupsRequiringUpload = (groups || [])
+    .filter((g) => g.photo_upload_required)
+    .filter((g) => {
+      const frequency = g.photo_upload_frequency || 'weekly'
+      return !hasUploadedInPeriod(user.id, userPhotos || [], frequency as 'daily' | 'weekly' | 'monthly')
+    })
+    .map((g) => g.name)
+
   const streakStatus = getStreakStatus(streak?.last_workout_date || null)
   const displayName = profile?.display_name || profile?.username || 'Athlete'
   const currentStreak = streak?.current_streak || 0
@@ -63,7 +120,21 @@ export default async function HomePage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="px-4 py-6">
+    <div>
+      {/* Progress Photo Carousel */}
+      {progressPhotos && progressPhotos.length > 0 && (
+        <PhotoCarouselWrapper photos={progressPhotos as any} />
+      )}
+
+      {/* Upload Required Banner */}
+      {groupsRequiringUpload.length > 0 && (
+        <UploadRequiredBanner
+          userId={user.id}
+          groupNames={groupsRequiringUpload}
+        />
+      )}
+
+      <div className="px-4 py-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -243,6 +314,7 @@ export default async function HomePage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }

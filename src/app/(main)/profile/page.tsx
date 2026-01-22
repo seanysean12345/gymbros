@@ -40,26 +40,26 @@ export default async function ProfilePage() {
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
 
-  // Fetch groups
+  // Fetch groups - using two separate queries to avoid RLS join issues
   const { data: groupMemberships } = await supabase
     .from('group_members')
-    .select(`
-      group:groups (
-        id,
-        name,
-        invite_code
-      )
-    `)
+    .select('group_id')
     .eq('user_id', user.id)
 
-  // Extract groups from memberships - Supabase returns single relations as objects
   type GroupData = { id: string; name: string; invite_code: string }
-  const groups: GroupData[] = groupMemberships
-    ?.map((m) => {
-      const g = m.group as unknown as GroupData | null
-      return g
-    })
-    .filter((g): g is GroupData => g !== null) || []
+  let groups: GroupData[] = []
+
+  if (groupMemberships && groupMemberships.length > 0) {
+    const groupIds = groupMemberships.map(m => m.group_id)
+    const { data: groupsData } = await supabase
+      .from('groups')
+      .select('id, name, invite_code')
+      .in('id', groupIds)
+
+    if (groupsData) {
+      groups = groupsData
+    }
+  }
 
   const displayName = profile?.display_name || profile?.username || 'Athlete'
   const username = profile?.username || 'user'

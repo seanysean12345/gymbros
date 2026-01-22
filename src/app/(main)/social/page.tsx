@@ -44,19 +44,22 @@ export default function SocialPage() {
       return
     }
 
-    // Fetch user's groups
+    // Fetch user's groups - using two separate queries to avoid RLS join issues
     const { data: memberships } = await supabase
       .from('group_members')
-      .select(`
-        group_id,
-        role,
-        group:groups (*)
-      `)
+      .select('group_id, role')
       .eq('user_id', user.id)
 
-    if (memberships) {
-      const groupsData = memberships.map((m) => m.group as unknown as Group)
-      setGroups(groupsData.filter(Boolean))
+    if (memberships && memberships.length > 0) {
+      const groupIds = memberships.map(m => m.group_id)
+      const { data: groupsData } = await supabase
+        .from('groups')
+        .select('*')
+        .in('id', groupIds)
+
+      if (groupsData) {
+        setGroups(groupsData)
+      }
     }
 
     // Fetch activity feed from group members

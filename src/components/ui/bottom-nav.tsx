@@ -38,7 +38,7 @@ export function BottomNav() {
           background: 'linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 50%, #0A0A0A 100%)',
           borderTop: '1px solid #3A3A3A',
           // Extra horizontal padding for skewed buttons + iOS safe areas
-          padding: '8px calc(16px + env(safe-area-inset-right, 0px)) 12px calc(16px + env(safe-area-inset-left, 0px))',
+          padding: '8px calc(24px + env(safe-area-inset-right, 0px)) 12px calc(24px + env(safe-area-inset-left, 0px))',
         }}
       >
         {/* Nav items container */}

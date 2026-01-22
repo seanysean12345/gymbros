@@ -437,7 +437,17 @@ export default function LogPage() {
       <div className="px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => setView(workout ? 'workout' : 'category')}
+            onClick={() => {
+              // Go back to category if workout has no exercises, otherwise go to workout
+              if (workout && workout.exercises.length > 0) {
+                setView('workout')
+              } else {
+                // Reset workout state when going back to categories with empty workout
+                setWorkout(null)
+                setSelectedCategory(null)
+                setView('category')
+              }
+            }}
             className="transform -skew-x-6 p-2 transition-all hover:scale-105"
             style={{
               background: 'linear-gradient(180deg, #D0D0D0 0%, #A0A0A0 100%)',

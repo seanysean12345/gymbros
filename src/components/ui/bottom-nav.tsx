@@ -57,8 +57,8 @@ export function BottomNav() {
                 onClick={(e) => handleNavClick(e, item.href)}
                 className={cn(
                   "relative flex-1",
-                  isFirst && "ml-2",
-                  isLast && "mr-2"
+                  isFirst && "ml-4",
+                  isLast && "mr-4"
                 )}
               >
                 {/* Chrome parallelogram button */}
